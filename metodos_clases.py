@@ -44,11 +44,11 @@ class Fondo(pygame.sprite.Sprite):
         self.camara_limitada = camara_limitada
 
     # -- METODO PARA CAMBIAR SEGUIMIENTO DE CAMARA --
-    def modo_de_camara(self, event):
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_1:
+    def modo_de_camara(self, evento):
+        if evento.type == pygame.KEYDOWN:
+            if evento.key == pygame.K_1:
                 self.camara.cambiar_modo(self.camara_seguir)
-            elif event.key == pygame.K_2:
+            elif evento.key == pygame.K_2:
                 self.camara.cambiar_modo(self.camara_limitada)
 
     # -- METODO PARA PINTAR FONDO --
@@ -132,61 +132,61 @@ class Player(pygame.sprite.Sprite):
 
 
     # --- ACTUALIZA AL JUGADOR ---
-    def update(self, evento, paredes, all_sprites, cam):
+    def update(self, paredes, all_sprites, cam):
         self.velocidad_x = 0
         self.velocidad_y = 0
         teclado = pygame.key.get_pressed()
-        self.evento = evento
         # -- Detecta teclas presionadas para iniciar movimiento y animacion --
-        if teclado[pygame.K_LEFT]:
+        if teclado[pygame.K_LEFT] or teclado[pygame.K_a]:
             self.velocidad_x = -5
             self.animacion('izquierda')
             self.posicion = 3
-        if teclado[pygame.K_RIGHT]:
+        if teclado[pygame.K_RIGHT] or teclado[pygame.K_d]:
             self.velocidad_x = 5
             self.animacion('derecha')
             self.posicion = 2
-        if teclado[pygame.K_UP]:
+        if teclado[pygame.K_UP] or teclado[pygame.K_w]:
             self.velocidad_y = -5
             self.animacion('arriba')
             self.posicion = 1
-        if teclado[pygame.K_DOWN]:
+        if teclado[pygame.K_DOWN] or teclado[pygame.K_s]:
             self.velocidad_y = 5
             self.animacion('abajo')
             self.posicion = 0
 
         # -- Detecta la ultima letra presionada para detener la animacion --
-        if self.evento.type == pygame.KEYUP:
-            if self.evento.key == pygame.K_LEFT and (teclado[pygame.K_RIGHT] == False and teclado[pygame.K_UP] == False and teclado[pygame.K_DOWN] == False):
-                self.animacion('quieto_izquierda')
-                self.posicion = 3
-            elif self.evento.key == pygame.K_RIGHT and (teclado[pygame.K_LEFT] == False and teclado[pygame.K_UP] == False and teclado[pygame.K_DOWN] == False):
-                self.animacion('quieto_derecha')
-                self.posicion = 2
-            elif self.evento.key == pygame.K_UP and (teclado[pygame.K_RIGHT] == False and teclado[pygame.K_LEFT] == False and teclado[pygame.K_DOWN] == False):
-                self.animacion('quieto_arriba')
-                self.posicion = 1
-            elif self.evento.key == pygame.K_DOWN and (teclado[pygame.K_RIGHT] == False and teclado[pygame.K_UP] == False and teclado[pygame.K_LEFT] == False):
-                self.animacion('quieto_abajo')
-                self.posicion = 0
-        # -- Dispara con Espacio (la bala sale segun la posicion del Jugador) --
-        if self.evento.type == pygame.KEYDOWN:        
-            if self.evento.key == pygame.K_SPACE and self.pulsado:
-                self.sonido_disparo.stop()
-                if self.posicion == 0:
-                    self.disparar(all_sprites, self.rect.centerx-15, self.rect.centery)
-                elif self.posicion == 1:
-                    self.disparar(all_sprites, self.rect.centerx+10, self.rect.centery)
-                elif self.posicion == 2:
-                    self.disparar(all_sprites, self.rect.centerx, self.rect.centery+10)
-                elif self.posicion == 3:
-                    self.disparar(all_sprites, self.rect.centerx, self.rect.centery+10)
-                self.sonido_disparo.play()
-                self.pulsado = False
-        if self.evento.type == pygame.KEYUP:        
-            if self.evento.key == pygame.K_SPACE:
-                self.pulsado = True
-        
+        """for event in pygame.event.get():
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_LEFT and (teclado[pygame.K_RIGHT] == False and teclado[pygame.K_UP] == False and teclado[pygame.K_DOWN] == False):
+                    self.animacion('quieto_izquierda')
+                    self.posicion = 3
+                elif event.key == pygame.K_RIGHT and (teclado[pygame.K_LEFT] == False and teclado[pygame.K_UP] == False and teclado[pygame.K_DOWN] == False):
+                    self.animacion('quieto_derecha')
+                    self.posicion = 2
+                elif event.key == pygame.K_UP and (teclado[pygame.K_RIGHT] == False and teclado[pygame.K_LEFT] == False and teclado[pygame.K_DOWN] == False):
+                    self.animacion('quieto_arriba')
+                    self.posicion = 1
+                elif event.key == pygame.K_DOWN and (teclado[pygame.K_RIGHT] == False and teclado[pygame.K_UP] == False and teclado[pygame.K_LEFT] == False):
+                    self.animacion('quieto_abajo')
+                    self.posicion = 0
+            # -- Dispara con Espacio (la bala sale segun la posicion del Jugador) --
+            if event.type == pygame.KEYDOWN:        
+                if event.key == pygame.K_SPACE and self.pulsado:
+                    self.sonido_disparo.stop()
+                    if self.posicion == 0:
+                        self.disparar(all_sprites, self.rect.centerx-15, self.rect.centery)
+                    elif self.posicion == 1:
+                        self.disparar(all_sprites, self.rect.centerx+10, self.rect.centery)
+                    elif self.posicion == 2:
+                        self.disparar(all_sprites, self.rect.centerx, self.rect.centery+10)
+                    elif self.posicion == 3:
+                        self.disparar(all_sprites, self.rect.centerx, self.rect.centery+10)
+                    self.sonido_disparo.play()
+                    self.pulsado = False
+            if event.type == pygame.KEYUP:        
+                if event.key == pygame.K_SPACE:
+                    self.pulsado = True """
+            
             
         # -- Actualiza movimientos del Jugador --
         self.rect.x += self.velocidad_x
@@ -220,9 +220,10 @@ class Disparo(pygame.sprite.Sprite):
         self.speedy = 15
         # - Direccion hacia donde ira la bala -
         self.p = posicion
+        self.s_pared = pygame.mixer.Sound("sonidos/disparo_pared.wav")
 
     # -- ACTUALIZA DISPARO --
-    def update(self, paredes, camara, ventana):
+    def update(self, paredes, camara, ventana, aliens):
         # -- Direccion de la bala segun donde mira el Jugador --
         if self.p == 0:
             self.rect.y += self.speedy
@@ -237,9 +238,22 @@ class Disparo(pygame.sprite.Sprite):
         for pared in paredes[0]:
             if pared[1].colliderect(self.rect):
                 self.kill()
+                
         for pared in paredes[1]:
             if pared[1].colliderect(self.rect):
                 self.kill()
+                
+        for alien in aliens:
+            if alien.rect.colliderect(self.rect):
+                self.s_pared.play()
+                self.kill()
+                alien.kill()
+                aliens.remove(alien)
+                
+        """for item in copy.copy(paredes[1]):
+            if self.rect.collidepoint(item[1].centerx, item[1].centery):
+                paredes[1].remove(item)"""
+                
 
         # -- Pintar bala --
         ventana.blit(self.image,(self.rect.x - camara.offset.x, self.rect.y - camara.offset.y))
@@ -252,19 +266,41 @@ class Enemigo(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-        self.speed_x = random.randrange(1,5)
-        self.speed_y = random.randrange(1,5)
+        self.speed_x = random.randrange(3,5)
+        self.speed_y = random.randrange(3,5)
+        self.direccion = random.randint(0,1)
 
     # -- ACTUALIZA ENEMIGO --
-    def update(self, paredes, camara, ventana):
-        # -- Se mueve en vertical --
-        self.rect.y += self.speed_y
-
-        # -- Si colisiona con pared, rebota --
-        for pared in paredes[0]:
-            if pared[1].colliderect(self.rect):
-                self.speed_y *= -1
+    def update(self, paredes, camara, ventana, aliens):
+        if self.direccion == 0:
+            # -- Se mueve en vertical --
+            self.rect.y += self.speed_y
+            # -- Si colisiona con pared, rebota --
+            for pared in paredes[0]:
+                if pared[1].colliderect(self.rect):
+                    self.speed_y *= -1
+        else:
+            # -- Se mueve en Horizontal --
+            self.rect.x += self.speed_x
+            # -- Si colisiona con pared, rebota --
+            for pared in paredes[0]:
+                if pared[1].colliderect(self.rect):
+                    self.speed_x *= -1
         # -- Pintar Enemigo --
         ventana.blit(self.image,(self.rect.x - camara.offset.x, self.rect.y - camara.offset.y))
+# --- FUNCION CREAR A LOS ALIENS ---
+def crear_aliens(allsprites, mapa):
+    aliens = []
+    ax, ay, i = 0, 0, 0
+    for fila in mapa:
+        for columna in fila:
+            if columna == "R":
+                aliens.append(Enemigo(ax,ay))
+                allsprites.add(aliens[i])
+                i += 1
+            ax += 50
+        ax = 0
+        ay += 50
+    return aliens
 
         
