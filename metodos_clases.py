@@ -262,30 +262,84 @@ class Disparo(pygame.sprite.Sprite):
 class Enemigo(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-        self.image = pygame.image.load("multimedia/arania.png").convert_alpha()
-        self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
         self.speed_x = random.randrange(3,5)
         self.speed_y = random.randrange(3,5)
         self.direccion = random.randint(0,1)
+        self.vertical = 1
+        self.horizontal = 1
+        self.sheet = pygame.image.load('multimedia/aranias.png').convert_alpha()
+        self.sheet.set_clip(pygame.Rect(9, 18, 43, 33))
+        self.image = self.sheet.subsurface(self.sheet.get_clip())
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.frame = 0 
+        self.retardo_frame = 0
+        self.arriba_direccion = { 0: (9, 18, 43, 33), 1: (72, 12, 44, 36), 2: (137, 10, 43, 37), 3: (201, 19, 43, 30) }
+        self.izquierda_direccion = { 0: (16, 79, 32, 37), 1: (71, 79, 40, 37), 2: (132, 82, 41, 34), 3: (203, 79, 35, 37) }
+        self.abajo_direccion = { 0: (9, 142, 43, 36), 1: (73, 144, 43, 39), 2: (135, 148, 47, 35), 3: (201, 146, 43, 33) }
+        self.derecha_direccion = { 0: (15, 207, 32, 37), 1: (80, 207, 40, 37), 2: (146, 210, 42, 34), 3: (209, 207, 35, 37) }
+        
 
+    # --- CAMBIO DE FRAME CON UN RETARDO DE 5 INCREMENTOS ---
+    def get_frame(self, frame_set):
+        self.retardo_frame += 1
+
+        if self.retardo_frame == 4:
+            self.frame += 1
+            self.retardo_frame = 0
+        if self.frame > (len(frame_set) - 2):
+            self.frame = 0
+        return frame_set[self.frame]
+
+    # --- SELECCIONAMOS UN FRAGMENTO DE LA IMAGEN ---
+    def clip(self, clipped_rect):
+        if type(clipped_rect) is dict:
+            self.sheet.set_clip(pygame.Rect(self.get_frame(clipped_rect)))
+        else:
+            self.sheet.set_clip(pygame.Rect(clipped_rect))
+        return clipped_rect
+
+    # --- ACTUALIZA FRAMES (movimiento y direccion de sprite) ---
+    def animacion(self, direccion):
+        # - Movimientos -
+        if direccion == 'izquierda':
+            self.clip(self.izquierda_direccion)
+        if direccion == 'derecha':
+            self.clip(self.derecha_direccion)
+        if direccion == 'arriba':
+            self.clip(self.arriba_direccion)
+        if direccion == 'abajo':
+            self.clip(self.abajo_direccion)
+        
+        # - Creo que carga el fragmento seleccionado de la imagen -
+        self.image = self.sheet.subsurface(self.sheet.get_clip())
     # -- ACTUALIZA ENEMIGO --
     def update(self, paredes, camara, ventana, aliens):
         if self.direccion == 0:
             # -- Se mueve en vertical --
             self.rect.y += self.speed_y
+            if self.vertical > 0:
+                self.animacion('abajo')
+            else:
+                self.animacion('arriba')
             # -- Si colisiona con pared, rebota --
             for pared in paredes[0]:
                 if pared[1].colliderect(self.rect):
                     self.speed_y *= -1
+                    self.vertical *= -1
         else:
             # -- Se mueve en Horizontal --
             self.rect.x += self.speed_x
+            if self.horizontal > 0:
+                self.animacion('derecha')
+            else:
+                self.animacion('izquierda')
             # -- Si colisiona con pared, rebota --
             for pared in paredes[0]:
                 if pared[1].colliderect(self.rect):
                     self.speed_x *= -1
+                    self.horizontal *= -1
         # -- Pintar Enemigo --
         ventana.blit(self.image,(self.rect.x - camara.offset.x, self.rect.y - camara.offset.y))
 # --- FUNCION CREAR A LOS ALIENS ---

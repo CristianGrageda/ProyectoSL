@@ -8,5 +8,3 @@ while g.ejecucion:
 	g.bucle_juego()
 
 # LOS EVENTOS DE PLAYER Y CAMARA DEBEN FUNCIONAR -----
-
-

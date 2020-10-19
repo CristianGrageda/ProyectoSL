@@ -110,11 +110,11 @@ class MenuCreditos(Menu):
                 self.run_display = False
             self.game.ventana_atras.blit(self.game.fondo_creditos, (0,0))
             self.game.pintar_texto('Creditos', 30, self.game.MITAD_ANCHO, self.game.MITAD_ALTO - 250)
-            self.game.pintar_texto('Nombre 1', 20, self.game.MITAD_ANCHO, self.game.MITAD_ALTO - 100)
-            self.game.pintar_texto('Nombre 2', 20, self.game.MITAD_ANCHO, self.game.MITAD_ALTO - 50)
-            self.game.pintar_texto('Nombre 3', 20, self.game.MITAD_ANCHO, self.game.MITAD_ALTO)
-            self.game.pintar_texto('Nombre 4', 20, self.game.MITAD_ANCHO, self.game.MITAD_ALTO + 50)
-            self.game.pintar_texto('Nombre 5', 20, self.game.MITAD_ANCHO, self.game.MITAD_ALTO + 100)
+            self.game.pintar_texto('Braian Gomez', 20, self.game.MITAD_ANCHO, self.game.MITAD_ALTO - 100)
+            self.game.pintar_texto('Cristian Grageda', 20, self.game.MITAD_ANCHO, self.game.MITAD_ALTO - 50)
+            self.game.pintar_texto('Facundo Verrastro', 20, self.game.MITAD_ANCHO, self.game.MITAD_ALTO)
+            self.game.pintar_texto('Rodrigo Fernandez', 20, self.game.MITAD_ANCHO, self.game.MITAD_ALTO + 50)
+            self.game.pintar_texto('Thomas Galarza', 20, self.game.MITAD_ANCHO, self.game.MITAD_ALTO + 100)
             self.pintar_pantalla()
 
 
