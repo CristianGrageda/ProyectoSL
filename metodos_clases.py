@@ -6,24 +6,36 @@ from camara import *
 pygame.init()
 
 # --- FUNCION CONSTRUIR MAPA ---
-def construir_mapa(mapa, muro, item, pozo):
+def construir_mapa(mapa, muro, muro_roto, item, pozo, botiquin, mancha, player):
     muros = []
     items = []
     pozos = []
+    botiquines = []
+    manchas = []
     x, y = 0, 0
     
     for fila in mapa:
         for columna in fila:
             if columna == "M":
                 muros.append([muro, pygame.Rect(x, y, 50, 50)])
+            elif columna == "N":
+                muros.append([muro_roto, pygame.Rect(x, y, 50, 50)])
+                player.alien_muertos += 4
             elif columna == "I":
                 items.append([item, pygame.Rect(x, y, 50, 50)])
+                player.items += 1
+            elif columna == "B":
+                botiquines.append([botiquin, pygame.Rect(x, y, 50, 50)])
             elif columna == "R":
                 pozos.append([pozo, pygame.Rect(x, y, 50, 50)])
+                player.alien_muertos += 1
+            elif columna == "S":
+                manchas.append([mancha, pygame.Rect(x, y, 50, 50)])
+                player.alien_muertos += 1
             x += 50
         x = 0
         y += 50
-    return muros, items, pozos
+    return muros, items, pozos, botiquines, manchas
 
 # --- FUNCION PINTAR MAPA ---
 def pintar_mapa(ventana_juego, paredes, cam_x, cam_y):
@@ -34,10 +46,15 @@ def pintar_mapa(ventana_juego, paredes, cam_x, cam_y):
 
 ############################## CLASE FONDO ##############################
 class Fondo(pygame.sprite.Sprite):
-    def __init__(self, camara, camara_seguir, camara_limitada):
+    def __init__(self, camara, camara_seguir, camara_limitada, nivel):
         pygame.display.set_caption("Juego Pygame")
-        self.salvapantalla = pygame.image.load("multimedia/fondo.gif").convert()
-        self.image = pygame.image.load("multimedia/fondo_1.gif").convert()
+        self.salvapantalla = pygame.image.load("multimedia/fondo.png").convert()
+        if nivel == 1:
+            self.image = pygame.image.load("multimedia/fondo_1.gif").convert()
+        elif nivel == 2:
+            self.image = pygame.image.load("multimedia/fondo_2.gif").convert()
+        elif nivel == 3:
+            self.image = pygame.image.load("multimedia/fondo_1.gif").convert()
         self.rect = self.image.get_rect()
         self.camara = camara
         self.camara_seguir = camara_seguir
@@ -59,15 +76,26 @@ class Fondo(pygame.sprite.Sprite):
 
 ############################## CLASE PLAYER ##############################
 class Player(pygame.sprite.Sprite):
-    def __init__(self, mitad_ancho, mitad_alto):
+    def __init__(self, mitad_ancho, mitad_alto, nivel):
         # - datos -
+        self.items = 0
+        self.alien_muertos = 0
+        self.mas_respawn = False
+        self.vida = 100
         self.pulsado = True
         self.velocidad_x = 0
         self.velocidad_y = 0
         self.medio_x, self.medio_y = 30, 45
         self.posicion = 0
-        self.borde_izquierdo, self.borde_derecho = 0, 1600
-        self.borde_arriba, self.borde_abajo = 0, 1200
+        if nivel == 1:
+            self.borde_izquierdo, self.borde_derecho = 0, 1600
+            self.borde_arriba, self.borde_abajo = 0, 1200
+        elif nivel == 2:
+            self.borde_izquierdo, self.borde_derecho = 0, 2000
+            self.borde_arriba, self.borde_abajo = 0, 1600
+        elif nivel == 3:
+            self.borde_izquierdo, self.borde_derecho = 0, 1600
+            self.borde_arriba, self.borde_abajo = 0, 1200
         self.sonido_item = pygame.mixer.Sound("sonidos/item.wav")
         self.sonido_disparo = pygame.mixer.Sound("sonidos/disparo.wav")
         self.sonido_caminar = pygame.mixer.Sound("sonidos/caminar.wav")
@@ -132,7 +160,7 @@ class Player(pygame.sprite.Sprite):
 
 
     # --- ACTUALIZA AL JUGADOR ---
-    def update(self, paredes, all_sprites, cam):
+    def update(self, paredes, all_sprites, cam, aliens):
         self.velocidad_x = 0
         self.velocidad_y = 0
         teclado = pygame.key.get_pressed()
@@ -202,6 +230,27 @@ class Player(pygame.sprite.Sprite):
             if self.rect.collidepoint(item[1].centerx, item[1].centery):
                 paredes[1].remove(item)
                 self.sonido_item.play()
+                self.items -= 1
+                if self.items == 6 or self.items == 3 or self.items == 2:
+                    self.mas_respawn = True
+        for botiquin in copy.copy(paredes[3]):
+            if self.rect.collidepoint(botiquin[1].centerx, botiquin[1].centery):
+                if self.vida < 100:
+                    paredes[3].remove(botiquin)
+                    self.vida += 15
+                    if self.vida > 100:
+                        self.vida = 100
+        for alien in aliens:
+            if alien.tipo == 0:
+                if self.rect.collidepoint(alien.rect.centerx, alien.rect.centery):
+                    self.vida -= 1
+            elif alien.tipo == 1:
+                if self.rect.colliderect(alien.rect):
+                    self.vida -= 0.5
+            elif alien.tipo == 2:
+                if self.rect.colliderect(alien.rect):
+                    self.vida -= 2
+        
     # -- Al pulsar espacio se crea un disparo (Clase) --
     def disparar(self, allsprites, x, y):
         bullet = Disparo(x, y, self.posicion)
@@ -223,7 +272,7 @@ class Disparo(pygame.sprite.Sprite):
         self.s_pared = pygame.mixer.Sound("sonidos/disparo_pared.wav")
 
     # -- ACTUALIZA DISPARO --
-    def update(self, paredes, camara, ventana, aliens):
+    def update(self, paredes, camara, ventana, aliens, player):
         # -- Direccion de la bala segun donde mira el Jugador --
         if self.p == 0:
             self.rect.y += self.speedy
@@ -247,8 +296,20 @@ class Disparo(pygame.sprite.Sprite):
             if alien.rect.colliderect(self.rect):
                 self.s_pared.play()
                 self.kill()
-                alien.kill()
-                aliens.remove(alien)
+                alien.vida -= 1
+
+                if alien.vida == 0 and alien.tipo == 0:
+                    alien.kill()
+                    aliens.remove(alien)
+                    player.alien_muertos -= 1
+                elif alien.vida == 0 and alien.tipo == 1:
+                    alien.kill()
+                    aliens.remove(alien)
+                    player.alien_muertos -= 1
+                elif alien.vida == 0 and alien.tipo == 2:
+                    alien.kill()
+                    aliens.remove(alien)
+                    player.alien_muertos -= 1
                 
         """for item in copy.copy(paredes[1]):
             if self.rect.collidepoint(item[1].centerx, item[1].centery):
@@ -260,26 +321,56 @@ class Disparo(pygame.sprite.Sprite):
 
 ############################## CLASE ENEMIGO ##############################
 class Enemigo(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, x, y, tipo):
         super().__init__()
-        self.speed_x = random.randrange(3,5)
-        self.speed_y = random.randrange(3,5)
-        self.direccion = random.randint(0,1)
-        self.vertical = 1
-        self.horizontal = 1
-        self.sheet = pygame.image.load('multimedia/aranias.png').convert_alpha()
-        self.sheet.set_clip(pygame.Rect(9, 18, 43, 33))
-        self.image = self.sheet.subsurface(self.sheet.get_clip())
-        self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
-        self.frame = 0 
-        self.retardo_frame = 0
-        self.arriba_direccion = { 0: (9, 18, 43, 33), 1: (72, 12, 44, 36), 2: (137, 10, 43, 37), 3: (201, 19, 43, 30) }
-        self.izquierda_direccion = { 0: (16, 79, 32, 37), 1: (71, 79, 40, 37), 2: (132, 82, 41, 34), 3: (203, 79, 35, 37) }
-        self.abajo_direccion = { 0: (9, 142, 43, 36), 1: (73, 144, 43, 39), 2: (135, 148, 47, 35), 3: (201, 146, 43, 33) }
-        self.derecha_direccion = { 0: (15, 207, 32, 37), 1: (80, 207, 40, 37), 2: (146, 210, 42, 34), 3: (209, 207, 35, 37) }
-        
+        if tipo == 0:
+            self.tipo = 0
+            self.vida = 5
+            self.speed_x = random.randrange(3,5)
+            self.speed_y = random.randrange(3,5)
+            self.direccion = random.randint(0,1)
+            self.vertical = 1
+            self.horizontal = 1
+            self.sheet = pygame.image.load('multimedia/alien.png').convert_alpha()
+            self.sheet.set_clip(pygame.Rect(9, 18, 43, 33))
+            self.image = self.sheet.subsurface(self.sheet.get_clip())
+            self.rect = self.image.get_rect()
+            self.frame = 0 
+            self.retardo_frame = 0
+            self.arriba_direccion = { 0: (9, 18, 43, 33), 1: (72, 12, 44, 36), 2: (137, 10, 43, 37), 3: (201, 19, 43, 30) }
+            self.izquierda_direccion = { 0: (16, 79, 32, 37), 1: (71, 79, 40, 37), 2: (132, 82, 41, 34), 3: (203, 79, 35, 37) }
+            self.abajo_direccion = { 0: (9, 142, 43, 36), 1: (73, 144, 43, 39), 2: (135, 148, 47, 35), 3: (201, 146, 43, 33) }
+            self.derecha_direccion = { 0: (15, 207, 32, 37), 1: (80, 207, 40, 37), 2: (146, 210, 42, 34), 3: (209, 207, 35, 37) }
+            self.rect.x = x
+            self.rect.y = y
+        elif tipo == 1:
+            self.tipo = 1
+            self.vida = 2
+            self.speed_x = random.randrange(2,3)
+            self.speed_y = random.randrange(2,3)
+            self.sheet = pygame.image.load('multimedia/alien_volador.png').convert_alpha()
+            self.sheet.set_clip(pygame.Rect(7, 5, 52, 36))
+            self.image = self.sheet.subsurface(self.sheet.get_clip())
+            self.rect = self.image.get_rect()
+            self.frame = 0 
+            self.retardo_frame = 0
+            self.arriba_direccion = { 0: (7, 5, 52, 36), 1: (77, 3, 42, 41), 2: (137, 11, 52, 25), 3: (202, 9, 52, 29) }
+            self.rect.x = x
+            self.rect.y = y
+        elif tipo == 2:
+            self.tipo = 2
+            self.vida = 20
+            self.speed_x = 2
+            self.sheet = pygame.image.load('multimedia/slime.png').convert_alpha()
+            self.sheet.set_clip(pygame.Rect(0, 0, 150, 150))
+            self.image = self.sheet.subsurface(self.sheet.get_clip())
+            self.rect = self.image.get_rect()
+            self.frame = 0 
+            self.retardo_frame = 0
+            self.derecha_direccion = { 0: (0, 0, 150, 150), 1: (150, 0, 150, 150), 2: (300, 0, 150, 150), 3: (450, 0, 150, 150), 4: (600, 0, 150, 150), 5: (750, 0, 150, 150)}
+            self.izquierda_direccion = { 0: (0, 150, 150, 150), 1: (150, 150, 150, 150), 2: (300, 150, 150, 150), 3: (450, 150, 150, 150), 4: (600, 150, 150, 150), 5: (750, 150, 150, 150)}
+            self.rect.x = x-50
+            self.rect.y = y-50
 
     # --- CAMBIO DE FRAME CON UN RETARDO DE 5 INCREMENTOS ---
     def get_frame(self, frame_set):
@@ -315,46 +406,85 @@ class Enemigo(pygame.sprite.Sprite):
         # - Creo que carga el fragmento seleccionado de la imagen -
         self.image = self.sheet.subsurface(self.sheet.get_clip())
     # -- ACTUALIZA ENEMIGO --
-    def update(self, paredes, camara, ventana, aliens):
-        if self.direccion == 0:
-            # -- Se mueve en vertical --
-            self.rect.y += self.speed_y
-            if self.vertical > 0:
-                self.animacion('abajo')
+    def update(self, paredes, camara, ventana, aliens, player):
+        if self.tipo == 0:
+            if self.direccion == 0:
+                # -- Se mueve en vertical --
+                self.rect.y += self.speed_y
+                if self.vertical > 0:
+                    self.animacion('abajo')
+                else:
+                    self.animacion('arriba')
+                # -- Si colisiona con pared, rebota --
+                for pared in paredes[0]:
+                    if pared[1].colliderect(self.rect):
+                        self.speed_y *= -1
+                        self.vertical *= -1
             else:
-                self.animacion('arriba')
-            # -- Si colisiona con pared, rebota --
-            for pared in paredes[0]:
-                if pared[1].colliderect(self.rect):
-                    self.speed_y *= -1
-                    self.vertical *= -1
-        else:
-            # -- Se mueve en Horizontal --
+                # -- Se mueve en Horizontal --
+                self.rect.x += self.speed_x
+                if self.horizontal > 0:
+                    self.animacion('derecha')
+                else:
+                    self.animacion('izquierda')
+                # -- Si colisiona con pared, rebota --
+                for pared in paredes[0]:
+                    if pared[1].colliderect(self.rect):
+                        self.speed_x *= -1
+                        self.horizontal *= -1
+        elif self.tipo == 1:
+            self.animacion('arriba')
+            if self.rect.centerx < player.rect.centerx:
+                self.rect.x += self.speed_x
+            else:
+                self.rect.x -= self.speed_x
+            if self.rect.centery < player.rect.centery:
+                self.rect.y += self.speed_y
+            else:
+                self.rect.y -= self.speed_y
+        elif self.tipo == 2:
             self.rect.x += self.speed_x
-            if self.horizontal > 0:
+            if self.speed_x > 0:
                 self.animacion('derecha')
             else:
                 self.animacion('izquierda')
             # -- Si colisiona con pared, rebota --
             for pared in paredes[0]:
-                if pared[1].colliderect(self.rect):
+                if pared[1].collidepoint(self.rect.centerx, self.rect.centery):
                     self.speed_x *= -1
-                    self.horizontal *= -1
         # -- Pintar Enemigo --
         ventana.blit(self.image,(self.rect.x - camara.offset.x, self.rect.y - camara.offset.y))
 # --- FUNCION CREAR A LOS ALIENS ---
-def crear_aliens(allsprites, mapa):
-    aliens = []
-    ax, ay, i = 0, 0, 0
-    for fila in mapa:
-        for columna in fila:
-            if columna == "R":
-                aliens.append(Enemigo(ax,ay))
-                allsprites.add(aliens[i])
-                i += 1
-            ax += 50
-        ax = 0
-        ay += 50
+def crear_aliens(allsprites, mapa, aliens, mas_respawn):
+    ax, ay = 0, 0
+    if mas_respawn:
+        for fila in mapa:
+            for columna in fila:
+                if columna == "N":
+                    aliens.append(Enemigo(ax, ay, 1))
+                ax += 50
+            ax = 0
+            ay += 50
+    else:
+        for fila in mapa:
+            for columna in fila:
+                if columna == "R":
+                    aliens.append(Enemigo(ax, ay, 0))
+                if columna == "N":
+                    aliens.append(Enemigo(ax, ay, 1))
+                if columna == "S":
+                    aliens.append(Enemigo(ax, ay, 2))
+                ax += 50
+            ax = 0
+            ay += 50
+    for alien in aliens:
+        allsprites.add(alien)
     return aliens
 
-        
+def pintar_vida(ventana, x, y, vida, BLANCO, VERDE, imagen):
+    barra_ancho = 100
+    barra_alto = 10
+    llenar_barra = (vida/100) * barra_ancho
+    llenar_barra = pygame.Rect(x+112, y+9, llenar_barra, barra_alto)
+    ventana.blit(imagen, (x, y))
+    pygame.draw.rect(ventana, VERDE, llenar_barra)
