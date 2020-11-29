@@ -13,6 +13,7 @@ def construir_mapa(mapa, muro, muro_roto, item, pozo, botiquin, mancha, player):
     botiquines = []
     manchas = []
     x, y = 0, 0
+    player.alien_muertos, player.items = 0, 0
     
     for fila in mapa:
         for columna in fila:
@@ -54,7 +55,7 @@ class Fondo(pygame.sprite.Sprite):
         elif nivel == 2:
             self.image = pygame.image.load("multimedia/fondo_2.gif").convert()
         elif nivel == 3:
-            self.image = pygame.image.load("multimedia/fondo_1.gif").convert()
+            self.image = pygame.image.load("multimedia/fondo_final.png").convert()
         self.rect = self.image.get_rect()
         self.camara = camara
         self.camara_seguir = camara_seguir
@@ -78,40 +79,53 @@ class Fondo(pygame.sprite.Sprite):
 class Player(pygame.sprite.Sprite):
     def __init__(self, mitad_ancho, mitad_alto, nivel):
         # - datos -
-        self.items = 0
-        self.alien_muertos = 0
-        self.mas_respawn = False
         self.vida = 100
         self.pulsado = True
         self.velocidad_x = 0
         self.velocidad_y = 0
         self.medio_x, self.medio_y = 30, 45
-        self.posicion = 0
-        if nivel == 1:
-            self.borde_izquierdo, self.borde_derecho = 0, 1600
-            self.borde_arriba, self.borde_abajo = 0, 1200
-        elif nivel == 2:
-            self.borde_izquierdo, self.borde_derecho = 0, 2000
-            self.borde_arriba, self.borde_abajo = 0, 1600
-        elif nivel == 3:
-            self.borde_izquierdo, self.borde_derecho = 0, 1600
-            self.borde_arriba, self.borde_abajo = 0, 1200
         self.sonido_item = pygame.mixer.Sound("sonidos/item.wav")
         self.sonido_disparo = pygame.mixer.Sound("sonidos/disparo.wav")
         self.sonido_caminar = pygame.mixer.Sound("sonidos/caminar.wav")
-        # - carga de imagen y configuracion de frames -
-        self.sheet = pygame.image.load('multimedia/player.png').convert_alpha()
-        self.sheet.set_clip(pygame.Rect(41, 34, 57, 84))
-        self.image = self.sheet.subsurface(self.sheet.get_clip())
-        self.rect = self.image.get_rect()
-        self.rect.x, self.rect.y = mitad_ancho - self.medio_x, mitad_alto - self.medio_y
-        self.frame = 0 
-        self.retardo_frame = 0
-        self.izquierda_direccion = { 0: (35, 268, 66, 84), 1: (185, 268, 66, 84), 2: (335, 268, 66, 84), 3: (485, 268, 66, 84), 4: (635, 268, 66, 84), 5: (785, 268, 66, 84), 6: (935, 268, 66, 84) }
-        self.derecha_direccion = { 0: (39, 385, 66, 84), 1: (189, 385, 66, 84), 2: (339, 385, 66, 84), 3: (489, 385, 66, 84), 4: (639, 385, 66, 84), 5: (789, 385, 66, 84), 6: (939, 385, 66, 84) }
-        self.arriba_direccion = { 0: (41, 151, 57, 84), 1: (191, 151, 57, 84), 2: (341, 151, 57, 84), 3: (491, 151, 57, 84), 4: (641, 151, 57, 84), 5: (791, 151, 57, 84), 6: (941, 151, 57, 84) }
-        self.abajo_direccion = { 0: (41, 34, 57, 84), 1: (191, 34, 57, 84), 2: (341, 34, 57, 84), 3: (491, 34, 57, 84), 4: (641, 34, 57, 84), 5: (791, 34, 57, 84), 6: (941, 34, 57, 84) }
+        self.sonido_vida = pygame.mixer.Sound("sonidos/vida.wav")
 
+        if nivel == 1 or nivel == 2 or nivel == 3:
+            self.items = 0
+            self.alien_muertos = 0
+            self.mas_respawn = False
+            self.posicion = 0
+            if nivel == 1:
+                self.borde_izquierdo, self.borde_derecho = 0, 1600
+                self.borde_arriba, self.borde_abajo = 0, 1200
+            elif nivel == 2:
+                self.borde_izquierdo, self.borde_derecho = 0, 2000
+                self.borde_arriba, self.borde_abajo = 0, 1600
+            elif nivel == 3:
+                self.borde_izquierdo, self.borde_derecho = 0, 1600
+                self.borde_arriba, self.borde_abajo = 0, 1200
+            # - carga de imagen y configuracion de frames -
+            self.sheet = pygame.image.load('multimedia/player.png').convert_alpha()
+            self.sheet.set_clip(pygame.Rect(41, 34, 57, 84))
+            self.image = self.sheet.subsurface(self.sheet.get_clip())
+            self.rect = self.image.get_rect()
+            self.rect.x, self.rect.y = mitad_ancho - self.medio_x, mitad_alto - self.medio_y
+            self.frame = 0 
+            self.retardo_frame = 0
+            self.izquierda_direccion = { 0: (35, 268, 66, 84), 1: (185, 268, 66, 84), 2: (335, 268, 66, 84), 3: (485, 268, 66, 84), 4: (635, 268, 66, 84), 5: (785, 268, 66, 84), 6: (935, 268, 66, 84) }
+            self.derecha_direccion = { 0: (39, 385, 66, 84), 1: (189, 385, 66, 84), 2: (339, 385, 66, 84), 3: (489, 385, 66, 84), 4: (639, 385, 66, 84), 5: (789, 385, 66, 84), 6: (939, 385, 66, 84) }
+            self.arriba_direccion = { 0: (41, 151, 57, 84), 1: (191, 151, 57, 84), 2: (341, 151, 57, 84), 3: (491, 151, 57, 84), 4: (641, 151, 57, 84), 5: (791, 151, 57, 84), 6: (941, 151, 57, 84) }
+            self.abajo_direccion = { 0: (41, 34, 57, 84), 1: (191, 34, 57, 84), 2: (341, 34, 57, 84), 3: (491, 34, 57, 84), 4: (641, 34, 57, 84), 5: (791, 34, 57, 84), 6: (941, 34, 57, 84) }
+
+            """elif nivel == 3:
+                self.sheet = pygame.image.load('multimedia/player_final.png').convert_alpha()
+                self.sheet.set_clip(pygame.Rect(41, 34, 57, 84))
+                self.image = self.sheet.subsurface(self.sheet.get_clip())
+                self.rect = self.image.get_rect()
+                self.rect.x, self.rect.y = mitad_ancho - self.medio_x, mitad_alto - self.medio_y
+                self.frame = 0 
+                self.retardo_frame = 0
+                self.izquierda_direccion = { 0: (35, 268, 66, 84), 1: (185, 268, 66, 84), 2: (335, 268, 66, 84), 3: (485, 268, 66, 84), 4: (635, 268, 66, 84), 5: (785, 268, 66, 84), 6: (935, 268, 66, 84) }
+            """
     # --- CAMBIO DE FRAME CON UN RETARDO DE 5 INCREMENTOS ---
     def get_frame(self, frame_set):
         self.retardo_frame += 1
@@ -160,7 +174,7 @@ class Player(pygame.sprite.Sprite):
 
 
     # --- ACTUALIZA AL JUGADOR ---
-    def update(self, paredes, all_sprites, cam, aliens):
+    def update(self, mapa, all_sprites, cam, aliens):
         self.velocidad_x = 0
         self.velocidad_y = 0
         teclado = pygame.key.get_pressed()
@@ -220,26 +234,32 @@ class Player(pygame.sprite.Sprite):
         self.rect.x += self.velocidad_x
         self.rect.y += self.velocidad_y
 
-        # -- Colision con paredes (0=pared , 1=item) --
-        for pared in paredes[0]:
+        # -- Colision con el mapa (0=pared , 1=item , 3=botiquin) --
+        # - Colision con pared, el personaje se queda quieto -
+        for pared in mapa[0]:
             if pared[1].colliderect(self.rect):
                 self.rect.x -= self.velocidad_x
                 self.rect.y -= self.velocidad_y
-
-        for item in copy.copy(paredes[1]):
+        # - Colision con item, item desaparece -
+        for item in copy.copy(mapa[1]):
             if self.rect.collidepoint(item[1].centerx, item[1].centery):
-                paredes[1].remove(item)
+                mapa[1].remove(item)
                 self.sonido_item.play()
                 self.items -= 1
+                # - Al llegar a 6, 3 o 2 items, reaparecer enemigos tipo 1 -
                 if self.items == 6 or self.items == 3 or self.items == 2:
                     self.mas_respawn = True
-        for botiquin in copy.copy(paredes[3]):
+        # - Colision con botiquin, botiquin desaparece y suma vida del jugador -
+        for botiquin in copy.copy(mapa[3]):
             if self.rect.collidepoint(botiquin[1].centerx, botiquin[1].centery):
+                # - Solo suma vida cuando el jugador tenga vida menos a 100, sino no cura -
                 if self.vida < 100:
-                    paredes[3].remove(botiquin)
+                    mapa[3].remove(botiquin)
+                    self.sonido_vida.play()
                     self.vida += 15
                     if self.vida > 100:
                         self.vida = 100
+        # - Colision con aliens, resta vida segun tipo de alien -
         for alien in aliens:
             if alien.tipo == 0:
                 if self.rect.collidepoint(alien.rect.centerx, alien.rect.centery):
@@ -283,34 +303,25 @@ class Disparo(pygame.sprite.Sprite):
         elif self.p == 3:
             self.rect.x -= self.speedy
         
-        # -- Si la bala colisiona con algo, desaparece --
+        # -- Si la bala colisiona las paredes o items, desaparece --
         for pared in paredes[0]:
             if pared[1].colliderect(self.rect):
                 self.kill()
-                
         for pared in paredes[1]:
             if pared[1].colliderect(self.rect):
                 self.kill()
-                
+        # -- Si la bala colisiona con los aliens, desaparece y le resta vida --     
         for alien in aliens:
             if alien.rect.colliderect(self.rect):
                 self.s_pared.play()
                 self.kill()
                 alien.vida -= 1
 
-                if alien.vida == 0 and alien.tipo == 0:
+                if alien.vida == 0:
                     alien.kill()
                     aliens.remove(alien)
                     player.alien_muertos -= 1
-                elif alien.vida == 0 and alien.tipo == 1:
-                    alien.kill()
-                    aliens.remove(alien)
-                    player.alien_muertos -= 1
-                elif alien.vida == 0 and alien.tipo == 2:
-                    alien.kill()
-                    aliens.remove(alien)
-                    player.alien_muertos -= 1
-                
+                    alien.sonido_muerte.play()
         """for item in copy.copy(paredes[1]):
             if self.rect.collidepoint(item[1].centerx, item[1].centery):
                 paredes[1].remove(item)"""
@@ -371,6 +382,7 @@ class Enemigo(pygame.sprite.Sprite):
             self.izquierda_direccion = { 0: (0, 150, 150, 150), 1: (150, 150, 150, 150), 2: (300, 150, 150, 150), 3: (450, 150, 150, 150), 4: (600, 150, 150, 150), 5: (750, 150, 150, 150)}
             self.rect.x = x-50
             self.rect.y = y-50
+        self.sonido_muerte = pygame.mixer.Sound("sonidos/alien_muerte.wav")
 
     # --- CAMBIO DE FRAME CON UN RETARDO DE 5 INCREMENTOS ---
     def get_frame(self, frame_set):

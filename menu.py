@@ -33,6 +33,8 @@ class MenuPrincipal(Menu):
     def display_menu(self):
         self.run_display = True
         if self.game.inicio:
+            self.cursor_rect.midtop = (self.continuarx + self.offset, self.continuary)
+            self.estado = 'Continuar'
             while self.run_display:
                 self.game.chequear_eventos()
                 self.chequear_ingreso()
@@ -45,6 +47,8 @@ class MenuPrincipal(Menu):
                 self.pintar_cursor()
                 self.pintar_pantalla()
         else:
+            self.cursor_rect.midtop = (self.iniciox + self.offset, self.inicioy)
+            self.estado = 'Inicio'
             while self.run_display:
                 self.game.chequear_eventos()
                 self.chequear_ingreso()
