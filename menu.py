@@ -287,7 +287,7 @@ class MenuDatos(Menu):
                 if self.game.TECLA_ENTER:
                     self.game.jugar = True
                     self.game.nivel = 3
-                    self.game.nivel_uno()
+                    self.game.nivel_final()
                     self.run_display = False
                 self.game.ventana_atras.blit(self.fondo_nivel_tres, (0,0))
                 self.pintar_pantalla()
